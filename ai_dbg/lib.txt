@@ -64,9 +64,9 @@ func changetoNum(file []rune) big.Int {
 		chStr  string
 		numStr string
 	)
-	//先把每一个unicode加上subKey，然后把整个文章变成一个很大的数字
+	//先把每一个unicode加上1856823，然后把整个文章变成一个很大的数字
 	for _, ch := range file {
-		ch += subKey //确保最前面不是0，否则会在加密时被去掉。unicode最大1114111（恶臭）
+		ch += 1856823 //确保最前面不是0，否则会在加密时被去掉。unicode最大1114111（恶臭）
 		chStr = strconv.Itoa(int(ch))
 		numStr += chStr
 	}
@@ -120,7 +120,7 @@ func GetM2(file string) string {
 	var (
 		chStr string
 		chInt int
-		res   string
+		res   []byte
 	)
 	for i := 0; i < len(file); i += 7 {
 		if i+7 <= len(file) {
@@ -129,10 +129,10 @@ func GetM2(file string) string {
 			printErr("密文损坏或者程序有BUG")
 		}
 		chInt, _ = strconv.Atoi(chStr)
-		chInt -= subKey
-		res += string(chInt)
+		chInt -= 1856823
+		res = append(res, byte(chInt))
 	}
-	return res
+	return string(res)
 }
 
 /*   发现了bufio.Scanner,不用了
