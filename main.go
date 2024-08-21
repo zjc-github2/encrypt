@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/big"
+	"os"
 
 	"none.com/encrypt_pro/lib"
 )
@@ -39,7 +40,6 @@ func JiaMi(path1, path2 string) {
 	}
 
 	lib.Write(path2, res)
-	fmt.Println("加密成功,")
 }
 
 func JieMi(path1, path2 string, notWrite bool) {
@@ -59,78 +59,95 @@ func JieMi(path1, path2 string, notWrite bool) {
 	res := lib.GetM2(mStr)
 	if !notWrite {
 		lib.Write(path2, res)
-		fmt.Println("解密成功,")
 	} else {
 		fmt.Print("----------------------------------------------------------------\n\n")
 		fmt.Println(res)
+		fmt.Print("\n\n")
+		fmt.Println("----------------------------------------------------------------")
 	}
-}
-
-func main() {
-	JiaMi("testFile/testi.txt", "testFile/testo1.txt")
-	JieMi("testFile/testo1.txt", "testFile/testo2.txt", false)
 }
 
 /*
 func main() {
-	fmt.Println("****************************加密小程序****************************")
-	fmt.Println("这个程序暂时只支持加密英文文档")
-	fmt.Print("加密还是解密？[1/2]:")
-	mode := 0
-	fmt.Scanln(&mode)
-	fmt.Print("请输入需要操作的文件的路径:")
-	path1 := ""
-	fmt.Scanln(&path1)
+	JiaMi("testFile/testi.txt", "testFile/testo1.txt")
+	JieMi("testFile/testo1.txt", "testFile/testo2.txt", false)
+}*/
 
-	if mode == 1 { //加密
-	coverStart1:
+func wrongArgs() {
+	fmt.Println("参数错误.输入-h获取帮助.")
+	os.Exit(-1)
+}
 
-		fmt.Print("是否覆盖？[Y/n]:")
-		cover := ""
-		fmt.Scanln(&cover)
-
-		if cover == "y" || cover == "Y" || cover == "" { //覆盖
-			JiaMi(path1, path1)
-		} else if cover == "n" || cover == "N" { //不覆盖
-			fmt.Print("请输入新文件的路径:")
-			path2 := ""
-			fmt.Scanln(&path2)
-			JiaMi(path1, path2)
-		} else {
-			fmt.Println("输入错误,请重新输入命令.")
-			goto coverStart1
-		}
-
-	} else if mode == 2 {
-		fmt.Print("仅在终端里阅读还是写入到文件？[1/2]")
-		notWrite := 0
-		fmt.Scanln(&notWrite)
-
-		if notWrite == 1 { //不写
-			JieMi(path1, path1, true) //写入路径随便写，反正用不上
-		} else if notWrite == 2 {
-			//----------------------------------------------------抄上面的
-		coverStart2: //为什么不缩进啊难受
-
-			fmt.Print("是否覆盖？[Y/n]:")
-			cover := ""
-			fmt.Scanln(&cover)
-
-			if cover == "y" || cover == "Y" || cover == "" { //覆盖
-				JieMi(path1, path1, false)
-			} else if cover == "n" || cover == "N" { //不覆盖
-				fmt.Print("请输入新文件的路径:")
-				path2 := ""
-				fmt.Scanln(&path2)
-				JieMi(path1, path2, false)
-			} else {
-				fmt.Println("输入错误,请重新输入命令.")
-				goto coverStart2
-			}
-			//----------------------------------------------------
+// 去掉文件路径的双引号
+func trim(inp string) string {
+	if inp[0] == '"' { //有开双引号
+		if inp[len(inp)-1] != '"' {
+			return inp[1:] //没有闭双引号，让他去吧
+		} else { //最后一个字符=="
+			return inp[1 : len(inp)-1]
 		}
 	}
-	fmt.Println("按下回车退出")
-	fmt.Scanln()
+	return inp
 }
-*/
+
+const help = `参数：
+1.-e或-d,加密或解密
+2.文件路径
+3.-c覆盖原文件或者新文件路径,解密时-nw仅在终端中阅读
+[在第一个参数中使用-h显示帮助,你显然已经这样做了]`
+
+func main() {
+	if len(os.Args) <= 1 {
+		fmt.Println("没有参数.请确保你从命令行启动而不是双击文件")
+		fmt.Println("第一个参数中输入-h获取帮助")
+		fmt.Println("按下回车退出...")
+		fmt.Scanln() //只是双击的话窗口会闪退
+		os.Exit(-1)
+	}
+
+	if os.Args[1] == "-h" && len(os.Args) == 2 {
+		fmt.Println(help)
+		return
+	} else if len(os.Args) == 4 {
+		if os.Args[1] == "-e" && os.Args[2] != "" {
+
+			if os.Args[3] == "-c" {
+				fmt.Printf("加密%s并覆盖\n", os.Args[2])
+				JiaMi(os.Args[2], os.Args[2])
+				fmt.Println("加密成功,文件已覆盖")
+
+			} else if os.Args[3] != "" {
+				fmt.Printf("加密%s并写入到%s\n", os.Args[2], os.Args[3])
+				JiaMi(os.Args[2], os.Args[3])
+				fmt.Println("加密成功")
+
+			} else {
+				wrongArgs()
+			}
+
+		} else if os.Args[1] == "-d" && os.Args[2] != "" {
+
+			if os.Args[3] == "-c" {
+				fmt.Printf("解密%s并覆盖\n", os.Args[2])
+				JieMi(trim(os.Args[2]), trim(os.Args[2]), false)
+				fmt.Println("解密成功,文件已覆盖")
+
+			} else if os.Args[3] == "-nw" {
+				fmt.Printf("解密%s并在终端中阅读\n", os.Args[2])
+				JieMi(trim(os.Args[2]), "none", true) //反正也不写入,path2瞎填就行了
+
+			} else if os.Args[3] != "" {
+				fmt.Printf("解密%s并写入到%s\n", os.Args[2], os.Args[3])
+				JieMi(trim(os.Args[2]), trim(os.Args[3]), false)
+				fmt.Println("解密成功")
+
+			} else {
+				wrongArgs()
+			}
+		} else {
+			wrongArgs()
+		}
+	} else {
+		wrongArgs() //太抽象了
+	}
+}

@@ -13,8 +13,6 @@ const subKey = 1856823 //在把文字变成数字是还能再加密一下
 
 func printErr(thing ...any) {
 	fmt.Println(thing...)
-	fmt.Println("按下回车退出")
-	fmt.Scanln()
 	os.Exit(-1)
 }
 

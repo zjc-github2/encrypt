@@ -10,10 +10,9 @@ import (
 
 // 获取一个二进制n位的随机素数。文心一言写的。
 func GetR(n int) big.Int {
-	// 初始化一个足够大的数，保证至少有n位
-	bitSize := n
-	max := new(big.Int).Lsh(big.NewInt(1), uint(bitSize))
-	max.Sub(max, big.NewInt(2)) // 2^bitSize - 2，确保是偶数
+	// 初始化一个足够大的数，保证至少有n位（二进制）
+	max := new(big.Int).Lsh(big.NewInt(1), uint(n))
+	max.Sub(max, big.NewInt(1)) // 2^n - 1
 
 	var num *big.Int // 将num的声明移动到for循环外部
 
@@ -35,7 +34,7 @@ func GetR(n int) big.Int {
 		}
 
 		// 使用Miller-Rabin测试
-		if num.ProbablyPrime(100) {
+		if num.ProbablyPrime(200) {
 			break
 		}
 
