@@ -18,8 +18,8 @@ import (
 const (
 	keyPath   = "key.txt"
 	keyLength = 2048
-	//密钥长度617，除以5是因为utf-8最大值是1114111(恶臭)，这里转换成十进制的长度。
-	maxLen = 617 / 5
+	//密钥长度617，除以7是因为utf-8最大值是1114111(恶臭)，这里转换成十进制的长度。
+	maxLen = 617/7 - 1
 )
 
 func JiaMi(path1, path2 string) {
