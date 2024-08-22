@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/big"
+	"os"
 	"strconv"
 
 	"none.com/encrypt_pro/lib"
@@ -26,24 +27,18 @@ const (
 func JiaMi(path1, path2 string) {
 	ms := lib.GetM1(path1, maxLen)
 	k, rn := lib.GetK1(keyPath)
-	/*kPtr, _ := new(big.Int).SetString("8956721553246263057482198427449084147267386183809447448470994834935069772354275878132921704222498700208270916331102705469678462446663273988570867932143410930007688399027458826358754196361770258664575626475985097446861347960442176686284462494944519691020274260412836055007320954118197333411519859376458536704369652409509614567883586467472673343635912658781059528854696192603224051079034059848457847333210152080039157763582757055898483717742224898027149593435198991338623574249551750146264829194714659770784450526008757769789145551823573353323152723065900434650574943711349235332193472286521221006558663049371983710453", 10)
-	k := *kPtr
-	rn := 1 //dbg*/
-
+	lib.Write(path2, strconv.Itoa(rn)+"\n", true)
 	r := lib.GetR(keyLength)
 
 	k.Mul(&k, &r) //n=k*r+m,所以现在是n=k+m
 
 	var (
-		n   big.Int
-		res string
+		n big.Int
 	)
 	for _, m := range ms {
 		n.Add(&k, &m)
-		res += (n.String() + "\n")
+		lib.Write(path2, n.String()+"\n", false)
 	}
-
-	lib.Write(path2, (strconv.Itoa(rn) + "\n" + res)) //第一行是第几个密钥
 }
 
 func JieMi(path1, path2 string, notWrite bool) {
@@ -57,26 +52,25 @@ func JieMi(path1, path2 string, notWrite bool) {
 	//n mod k = m
 	for _, n := range ns {
 		m.Mod(&n, &k)
-		mStr += m.String()
+		mStr = m.String()
 	}
 
 	res := lib.GetM2(mStr)
 	if !notWrite {
-		lib.Write(path2, res)
+		lib.Write(path2, res, true)
 	} else {
 		fmt.Print("----------------------------------------------------------------\n\n")
 		fmt.Println(res)
-		fmt.Print("\n\n")
-		fmt.Println("----------------------------------------------------------------")
+		fmt.Println("\n----------------------------------------------------------------")
 	}
 }
 
+/*
 func main() {
 	JiaMi("testFile/testi.txt", "testFile/testo1.txt")
 	JieMi("testFile/testo1.txt", "testFile/testo2.txt", false)
-}
+}*/
 
-/*
 func wrongArgs() {
 	fmt.Println("参数错误.输入-h获取帮助.")
 	os.Exit(-1)
@@ -155,4 +149,3 @@ func main() {
 		wrongArgs() //太抽象了
 	}
 }
-*/

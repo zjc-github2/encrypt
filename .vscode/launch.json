@@ -5,16 +5,28 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Run main.go",
+            "name": "encrypt",
             "type": "go",
             "request": "launch",
             "mode": "auto",
             "program": "main.go",
-            /*"args": [
+            "args": [
                 "-e",
                 "./testFile/testi.txt",
                 "./testFile/testo1.txt"
-            ]*/
+            ]
+        },
+        {
+            "name": "decrypt",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "main.go",
+            "args": [
+                "-d",
+                "./testFile/testo1.txt",
+                "./testFile/testo2.txt"
+            ]
         }
     ]
 }

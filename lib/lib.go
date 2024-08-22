@@ -2,15 +2,20 @@ package lib
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"math/big"
 	"math/rand"
 	"os"
+	"os/exec"
 	"strconv"
 )
 
-const subKey = 1856823 //在把文字变成数字是还能再加密一下
+const (
+	subKey         = 1856823 //在把文字变成数字是还能再加密一下
+	largePrimePath = "./largePrime.exe"
+)
 
 func printErr(thing ...any) {
 	fmt.Println(thing...)
@@ -67,7 +72,25 @@ func GetK2(path string, which int) big.Int {
 	return k
 }
 
-//GetR在另外一个文件里
+func GetR(n int) big.Int {
+	cmd := exec.Command(largePrimePath)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+
+	err := cmd.Run()
+	if err != nil {
+		printErr("生成密钥时发生错误:", err, "\n请确保largePrime.exe和这个程序在同一目录下.")
+	}
+
+	rStr := out.String()
+	r, success := new(big.Int).SetString(rStr[:len(rStr)-2], 10) //要去掉\r和\n
+	if !success {
+		printErr("这个程序出了一点小问题")
+	}
+
+	fmt.Println("->生成密钥成功")
+	return *r
+}
 
 // 读取文件的n个字，utf-8专用的
 func readWords(n int, reader *bufio.Reader) ([]rune, bool) {
@@ -162,7 +185,7 @@ func GetM2(file string) string {
 		if i+7 <= len(file) {
 			chStr = string(file[i : i+7])
 		} else { //凑不满7个一组
-			printErr("密文损坏或者程序有BUG")
+			printErr("密文损坏")
 		}
 		chInt, _ = strconv.Atoi(chStr)
 		chInt -= subKey
@@ -212,8 +235,16 @@ func GetN(path string) ([]big.Int, int) {
 	return res, which
 }
 
-func Write(path string, thing string) {
-	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+func Write(path string, thing string, isTrunc bool) {
+	var (
+		file *os.File
+		err  error
+	)
+	if isTrunc {
+		file, err = os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	} else {
+		file, err = os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+	}
 	if err != nil {
 		printErr("读取文件时发生错误：", err.Error())
 	}
