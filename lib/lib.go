@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"math/rand"
 	"os"
 	"strconv"
 )
@@ -16,17 +17,54 @@ func printErr(thing ...any) {
 	os.Exit(-1)
 }
 
-func GetK(path string) big.Int {
-	file, err := os.ReadFile(path)
+func GetK1(path string) (big.Int, int) {
+	file, err := os.Open(path)
 	if err != nil {
 		printErr("读取密钥时发生错误:", err.Error(), "请确保你已经把密钥输入到了", path)
 	}
+	defer file.Close()
 
-	var a big.Int
-	a.SetString(string(file), 10)
+	scanner := bufio.NewScanner(file)
+	which := rand.Intn(99) + 1 //1~99
+	ln := 0
+	var k big.Int
+	for scanner.Scan() {
+		ln++
+		if ln == which {
+			_, success := k.SetString(scanner.Text(), 10)
+			if !success {
+				printErr("读取密钥时发生错误.请确保你输入了正确的密钥.")
+			}
+		}
+	}
 
 	fmt.Println("->读取密钥成功")
-	return a
+	return k, which
+}
+
+func GetK2(path string, which int) big.Int {
+	//不用看了,抄GetK1的
+	file, err := os.Open(path)
+	if err != nil {
+		printErr("读取密钥时发生错误:", err.Error(), "请确保你已经把密钥输入到了", path)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	ln := 0
+	var k big.Int //TODO:成0了
+	for scanner.Scan() {
+		ln++
+		if ln == which {
+			_, success := k.SetString(scanner.Text(), 10)
+			if !success {
+				printErr("读取密钥时发生错误.请确保你输入了正确的密钥.")
+			}
+		}
+	}
+
+	fmt.Println("->读取密钥成功")
+	return k
 }
 
 //GetR在另外一个文件里
@@ -95,7 +133,7 @@ func GetM1(path string, maxLen int) []big.Int {
 
 	/*
 		if len(file) <= maxLen {
-			return []big.Int{changetoNum(file)}
+			return []big.Int{changetoNum(file
 		}*/
 
 	var (
@@ -144,27 +182,34 @@ func findLn(inp []byte, start int) int {
 }
 */
 
-func GetN(path string) []big.Int {
+func GetN(path string) ([]big.Int, int) {
 	file, err := os.Open(path)
 	if err != nil {
 		printErr("打开文件时发生错误：", err.Error())
 	}
+	defer file.Close()
 
 	//先把文件拆开，分别解密，再合起来
 	//这里只需要把文件拆开
 	ln := bufio.NewScanner(file)
+	ln.Scan()
+	which, err := strconv.Atoi(ln.Text())
+	if err != nil {
+		printErr("密文损坏") //TODO:这里
+	}
+
 	var (
 		res []big.Int
 	)
 	for ln.Scan() {
 		lnBigInt, success := new(big.Int).SetString(ln.Text(), 10)
 		if !success {
-			printErr("密文损坏或者程序有BUG")
+			printErr("密文损坏")
 		}
 		res = append(res, *lnBigInt)
 	}
 
-	return res
+	return res, which
 }
 
 func Write(path string, thing string) {
