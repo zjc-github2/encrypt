@@ -100,12 +100,12 @@ func main() {
 		fmt.Print("输入参数:")
 		inp := ""
 		fmt.Scanln(inp)
-		args=[]string{" ",strings.Fields(inp)...}
+		args = append([]string{""}, strings.Fields(inp)...)
 
-	}else{
-		args=os.Args
+	} else {
+		args = os.Args
 	}
-	
+
 	if args[1] == "-h" && len(args) == 2 {
 		fmt.Println(help)
 		return
@@ -114,7 +114,7 @@ func main() {
 
 			if args[3] == "-c" {
 				fmt.Printf("加密%s并覆盖\n", args[2])
-				JiaMi(args[2],args[2])
+				JiaMi(args[2], args[2])
 				fmt.Println("加密成功,文件已覆盖")
 
 			} else if args[3] != "" {
