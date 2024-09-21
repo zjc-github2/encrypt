@@ -14,11 +14,13 @@ import (
 
 const (
 	subKey         = 1856823 //在把文字变成数字是还能再加密一下
-	largePrimePath = "./largePrime.exe"
+	largePrimePath = "largePrime.exe"
 )
 
 func printErr(thing ...any) {
 	fmt.Println(thing...)
+	fmt.Println("按下回车退出...")
+	fmt.Scanln()
 	os.Exit(-1)
 }
 
@@ -79,7 +81,7 @@ func GetR(n int) big.Int {
 
 	err := cmd.Run()
 	if err != nil {
-		printErr("生成密钥时发生错误:", err, "\n请确保largePrime.exe和这个程序在同一目录下.")
+		printErr("生成密钥时发生错误:", err)
 	}
 
 	rStr := out.String()

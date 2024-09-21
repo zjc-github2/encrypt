@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"os"
 	"strconv"
+	"strings"
 
 	"none.com/encrypt_pro/lib"
 )
@@ -65,12 +66,6 @@ func JieMi(path1, path2 string, notWrite bool) {
 	}
 }
 
-/*
-func main() {
-	JiaMi("testFile/testi.txt", "testFile/testo1.txt")
-	JieMi("testFile/testo1.txt", "testFile/testo2.txt", false)
-}*/
-
 func wrongArgs() {
 	fmt.Println("参数错误.输入-h获取帮助.")
 	os.Exit(-1)
@@ -95,48 +90,56 @@ const help = `参数：
 [在第一个参数中使用-h显示帮助,你显然已经这样做了]`
 
 func main() {
-	if len(os.Args) <= 1 {
-		fmt.Println("没有参数.请确保你从命令行启动而不是双击文件")
-		fmt.Println("第一个参数中输入-h获取帮助")
+	defer func() {
 		fmt.Println("按下回车退出...")
-		fmt.Scanln() //只是双击的话窗口会闪退
-		os.Exit(-1)
-	}
+		fmt.Scanln()
+	}()
 
-	if os.Args[1] == "-h" && len(os.Args) == 2 {
+	var args []string
+	if len(os.Args) <= 1 {
+		fmt.Print("输入参数:")
+		inp := ""
+		fmt.Scanln(inp)
+		args=[]string{" ",strings.Fields(inp)...}
+
+	}else{
+		args=os.Args
+	}
+	
+	if args[1] == "-h" && len(args) == 2 {
 		fmt.Println(help)
 		return
-	} else if len(os.Args) == 4 {
-		if os.Args[1] == "-e" && os.Args[2] != "" {
+	} else if len(args) == 4 {
+		if args[1] == "-e" && args[2] != "" {
 
-			if os.Args[3] == "-c" {
-				fmt.Printf("加密%s并覆盖\n", os.Args[2])
-				JiaMi(os.Args[2], os.Args[2])
+			if args[3] == "-c" {
+				fmt.Printf("加密%s并覆盖\n", args[2])
+				JiaMi(args[2],args[2])
 				fmt.Println("加密成功,文件已覆盖")
 
-			} else if os.Args[3] != "" {
-				fmt.Printf("加密%s并写入到%s\n", os.Args[2], os.Args[3])
-				JiaMi(os.Args[2], os.Args[3])
+			} else if args[3] != "" {
+				fmt.Printf("加密%s并写入到%s\n", args[2], args[3])
+				JiaMi(args[2], args[3])
 				fmt.Println("加密成功")
 
 			} else {
 				wrongArgs()
 			}
 
-		} else if os.Args[1] == "-d" && os.Args[2] != "" {
+		} else if args[1] == "-d" && args[2] != "" {
 
-			if os.Args[3] == "-c" {
-				fmt.Printf("解密%s并覆盖\n", os.Args[2])
-				JieMi(trim(os.Args[2]), trim(os.Args[2]), false)
+			if args[3] == "-c" {
+				fmt.Printf("解密%s并覆盖\n", args[2])
+				JieMi(trim(args[2]), trim(args[2]), false)
 				fmt.Println("解密成功,文件已覆盖")
 
-			} else if os.Args[3] == "-nw" {
-				fmt.Printf("解密%s并在终端中阅读\n", os.Args[2])
-				JieMi(trim(os.Args[2]), "none", true) //反正也不写入,path2瞎填就行了
+			} else if args[3] == "-nw" {
+				fmt.Printf("解密%s并在终端中阅读\n", args[2])
+				JieMi(trim(args[2]), "none", true) //反正也不写入,path2瞎填就行了
 
-			} else if os.Args[3] != "" {
-				fmt.Printf("解密%s并写入到%s\n", os.Args[2], os.Args[3])
-				JieMi(trim(os.Args[2]), trim(os.Args[3]), false)
+			} else if args[3] != "" {
+				fmt.Printf("解密%s并写入到%s\n", args[2], args[3])
+				JieMi(trim(args[2]), trim(args[3]), false)
 				fmt.Println("解密成功")
 
 			} else {
