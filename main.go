@@ -99,7 +99,7 @@ func main() {
 	if len(os.Args) <= 1 {
 		fmt.Print("输入参数:")
 		inp := ""
-		fmt.Scanln(inp)
+		fmt.Scanln(&inp)
 		args = append([]string{""}, strings.Fields(inp)...)
 
 	} else {
