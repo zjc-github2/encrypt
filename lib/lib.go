@@ -14,7 +14,7 @@ import (
 
 const (
 	subKey         = 1856823 //在把文字变成数字是还能再加密一下
-	largePrimePath = "largePrime.exe"
+	largePrimePath = "largePrime.py"
 )
 
 func printErr(thing ...any) {
@@ -75,8 +75,8 @@ func GetK2(path string, which int) big.Int {
 }
 
 func GetR(n int) big.Int {
-	cmd := exec.Command(largePrimePath)
-	var out bytes.Buffer
+	cmd := exec.Command("python", largePrimePath)
+	var oubytes.Buffer
 	cmd.Stdout = &out
 
 	err := cmd.Run()
