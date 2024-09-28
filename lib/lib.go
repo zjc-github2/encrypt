@@ -76,7 +76,7 @@ func GetK2(path string, which int) big.Int {
 
 func GetR(n int) big.Int {
 	cmd := exec.Command("python", largePrimePath)
-	var oubytes.Buffer
+	var out bytes.Buffer
 	cmd.Stdout = &out
 
 	err := cmd.Run()
