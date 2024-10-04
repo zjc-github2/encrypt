@@ -14,7 +14,7 @@ import (
 
 const (
 	subKey         = 1856823 //在把文字变成数字是还能再加密一下
-	largePrimePath = "largePrime.exe"
+	largePrimePath = "largePrime.py"
 )
 
 func printErr(thing ...any) {
@@ -75,7 +75,7 @@ func GetK2(path string, which int) big.Int {
 }
 
 func GetR(n int) big.Int {
-	cmd := exec.Command(largePrimePath)
+	cmd := exec.Command("python", largePrimePath)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 
@@ -101,7 +101,7 @@ func readWords(n int, reader *bufio.Reader) ([]rune, bool) {
 		r   rune
 		err error
 	)
-	for range n + 1 {
+	for i := 0; i < n+1; i++ {
 		r, _, err = reader.ReadRune()
 		if err != nil {
 			break // 如果遇到错误（如EOF），则跳出循环
