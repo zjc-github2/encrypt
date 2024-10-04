@@ -101,7 +101,7 @@ func readWords(n int, reader *bufio.Reader) ([]rune, bool) {
 		r   rune
 		err error
 	)
-	for range n + 1 {
+	for i := 0; i < n+1; i++ {
 		r, _, err = reader.ReadRune()
 		if err != nil {
 			break // 如果遇到错误（如EOF），则跳出循环
