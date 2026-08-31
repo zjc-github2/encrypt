@@ -21,42 +21,67 @@ import (
 const (
 	keyPath   = "key.txt"
 	keyLength = 2048
-	//密钥长度617，除以7是因为utf-8最大值是1114111(恶臭)，这里转换成十进制的长度。
-	maxLen = 617/7 - 1
+	//密钥长度500~700位,按最短500位算安全上限:解密要求m<k,每个utf-8字符转成7位十进制数字(最大值1114111),故单块最多500/7个字符,再-1留余量。
+	maxLen = 500/7 - 1
 )
 
-func JiaMi(path1, path2 string) {
-	ms := lib.GetM1(path1, maxLen)
-	k, rn := lib.GetK1(keyPath)
-	lib.Write(path2, strconv.Itoa(rn)+"\n", true)
-	r := lib.GetR(keyLength)
-
-	k.Mul(&k, &r) //n=k*r+m,所以现在是n=k+m
+// 对一组明文块加密,得到密文文本(第一行是密钥行号,后面每行是一个密文块)
+func jiami(ms []big.Int, k *big.Int, rn int) string {
+	var sb strings.Builder
+	sb.WriteString(strconv.Itoa(rn))
+	sb.WriteByte('\n')
 
 	var (
 		n big.Int
 	)
-	for _, m := range ms {
-		n.Add(&k, &m)
-		lib.Write(path2, n.String()+"\n", false)
+	for i := range ms {
+		n.Add(k, &ms[i]) //n=k*r+m
+		sb.WriteString(n.String())
+		sb.WriteByte('\n')
 	}
+	return sb.String()
+}
+
+// 对一组密文块解密,把各块解出的数字串拼接起来(以7位一组还原成文本)
+func jiemi(ns []big.Int, k *big.Int) string {
+	var (
+		sb strings.Builder
+		m  big.Int
+	)
+	for i := range ns {
+		m.Mod(&ns[i], k) //n mod k = m
+		sb.WriteString(m.String())
+	}
+	return sb.String()
+}
+
+func JiaMi(path1, path2 string) {
+	k, rn := lib.GetK1(keyPath)
+	r := lib.GetR(keyLength)
+	k.Mul(&k, &r)
+
+	//第一次加密:明文A -> 密文B
+	ms := lib.GetM1(path1, maxLen)
+	b := jiami(ms, &k, rn)
+
+	//第二次加密:密文B -> 密文C,两次使用同一密钥k
+	ms2 := lib.GetM1String(b, maxLen)
+	c := jiami(ms2, &k, rn)
+
+	lib.Write(path2, c, true)
 }
 
 func JieMi(path1, path2 string, notWrite bool) {
+	//第一次解密:密文C -> 密文B
 	ns, which := lib.GetN(path1)
 	k := lib.GetK2(keyPath, which)
+	b := lib.GetM2(jiemi(ns, &k))
 
-	var (
-		m    big.Int
-		mStr string
-	)
-	//n mod k = m
-	for _, n := range ns {
-		m.Mod(&n, &k)
-		mStr = m.String()
-	}
+	//第二次解密:密文B -> 明文A,密钥由B中的行号确定(与加密用的是同一个密钥)
+	ns2, which2 := lib.GetNString(b)
+	k2 := lib.GetK2(keyPath, which2)
+	res := lib.GetM2(jiemi(ns2, &k2))
 
-	res := lib.GetM2(mStr)
 	if !notWrite {
 		lib.Write(path2, res, true)
 	} else {

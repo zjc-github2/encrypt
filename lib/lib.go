@@ -9,12 +9,14 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 const (
-	subKey         = 1856823 //在把文字变成数字是还能再加密一下
-	largePrimePath = "largePrime.exe"
+	subKey         = 1856823 //在把文字变成数字是还能再加密一下，顺便补位
+	largePrimePath = "largePrime.py"
 )
 
 func printErr(thing ...any) {
@@ -74,18 +76,32 @@ func GetK2(path string, which int) big.Int {
 	return k
 }
 
+// 定位largePrime.py:优先当前工作目录, 其次main所在目录(兼容go run与绝对路径调用)
+func findLargePrime() string {
+	if _, err := os.Stat(largePrimePath); err == nil {
+		return largePrimePath
+	}
+	if exe, err := os.Executable(); err == nil {
+		script := filepath.Join(filepath.Dir(exe), largePrimePath)
+		if _, err := os.Stat(script); err == nil {
+			return script
+		}
+	}
+	return largePrimePath
+}
+
 func GetR(n int) big.Int {
-	cmd := exec.Command(largePrimePath)
-	var out bytes.Buffer
+	cmd := exec.Command("python3", findLargePrime())
+	var out, errBuf bytes.Buffer
 	cmd.Stdout = &out
+	cmd.Stderr = &errBuf
 
 	err := cmd.Run()
 	if err != nil {
-		printErr("生成密钥时发生错误:", err)
+		printErr("生成密钥时发生错误:", err, "请确保已安装python3与gmpy2:", errBuf.String())
 	}
 
-	rStr := out.String()
-	r, success := new(big.Int).SetString(rStr[:len(rStr)-2], 10) //要去掉\r和\n
+	r, success := new(big.Int).SetString(strings.TrimRight(out.String(), "\r\n"), 10)
 	if !success {
 		printErr("这个程序出了一点小问题")
 	}
@@ -146,21 +162,7 @@ func changetoNum(file []rune) big.Int {
 	return bigInt
 }
 
-// 由于强制m<k*r,所以一个长的m可能要加密多次
-func GetM1(path string, maxLen int) []big.Int {
-
-	file, err := os.Open(path)
-	if err != nil {
-		printErr("读取位于", path, "的文件时发生错误：", err.Error())
-	}
-	defer file.Close()
-	reader := bufio.NewReader(file)
-
-	/*
-		if len(file) <= maxLen {
-			return []big.Int{changetoNum(file
-		}*/
-
+func getMs(reader *bufio.Reader, maxLen int) []big.Int {
 	var (
 		res     []big.Int
 		lastEof bool
@@ -174,6 +176,21 @@ func GetM1(path string, maxLen int) []big.Int {
 		}
 	}
 	return res
+}
+
+// 由于强制m<k*r,所以一个长的m可能要加密多次
+func GetM1(path string, maxLen int) []big.Int {
+	file, err := os.Open(path)
+	if err != nil {
+		printErr("读取位于", path, "的文件时发生错误：", err.Error())
+	}
+	defer file.Close()
+	return getMs(bufio.NewReader(file), maxLen)
+}
+
+// 从字符串分组:双重加密时把第一层密文当作明文再加密
+func GetM1String(s string, maxLen int) []big.Int {
+	return getMs(bufio.NewReader(strings.NewReader(s)), maxLen)
 }
 
 // 解码，仍然是加密.go抄的
@@ -207,18 +224,9 @@ func findLn(inp []byte, start int) int {
 }
 */
 
-func GetN(path string) ([]big.Int, int) {
-	file, err := os.Open(path)
-	if err != nil {
-		printErr("打开文件时发生错误：", err.Error())
-	}
-	defer file.Close()
-
-	//先把文件拆开，分别解密，再合起来
-	//这里只需要把文件拆开
-	ln := bufio.NewScanner(file)
-	ln.Scan()
-	which, err := strconv.Atoi(ln.Text())
+func getNs(sc *bufio.Scanner) ([]big.Int, int) {
+	sc.Scan()
+	which, err := strconv.Atoi(sc.Text())
 	if err != nil {
 		printErr("密文损坏") //TODO:这里
 	}
@@ -226,8 +234,8 @@ func GetN(path string) ([]big.Int, int) {
 	var (
 		res []big.Int
 	)
-	for ln.Scan() {
-		lnBigInt, success := new(big.Int).SetString(ln.Text(), 10)
+	for sc.Scan() {
+		lnBigInt, success := new(big.Int).SetString(sc.Text(), 10)
 		if !success {
 			printErr("密文损坏")
 		}
@@ -235,6 +243,20 @@ func GetN(path string) ([]big.Int, int) {
 	}
 
 	return res, which
+}
+
+func GetN(path string) ([]big.Int, int) {
+	file, err := os.Open(path)
+	if err != nil {
+		printErr("打开文件时发生错误：", err.Error())
+	}
+	defer file.Close()
+	return getNs(bufio.NewScanner(file))
+}
+
+// 从字符串读取密文:双重解密时把第一层解出的密文当作文件再解密
+func GetNString(s string) ([]big.Int, int) {
+	return getNs(bufio.NewScanner(strings.NewReader(s)))
 }
 
 func Write(path string, thing string, isTrunc bool) {
